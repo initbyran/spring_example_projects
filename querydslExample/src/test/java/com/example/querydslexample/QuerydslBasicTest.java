@@ -6,6 +6,7 @@ import com.example.querydslexample.entity.Team;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +24,7 @@ import java.util.List;
 
 import static com.example.querydslexample.entity.QMember.*;
 import static com.example.querydslexample.entity.QTeam.team;
+import static com.querydsl.jpa.JPAExpressions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
@@ -308,7 +310,6 @@ public class QuerydslBasicTest {
     // 1. fetch join이 없을 때
     @PersistenceUnit
     EntityManagerFactory emf;
-
     @Test
     public void fetchJoinNo() throws Exception{
         // 영속성 컨텍스트에 남아있는 것을 데이터베이스로 넘겨 비운다
@@ -322,8 +323,104 @@ public class QuerydslBasicTest {
 
         // 초기화가 된 엔티티인지 아닌지 검증
         boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
-        System.out.println(loaded);
         assertThat(loaded).as("패치 조인 미적용").isFalse();
-
     }
+    // 2. fetch join 적용
+    @Test
+    public void fetchJoinUser() throws Exception{
+        // 영속성 컨텍스트에 남아있는 것을 데이터베이스로 넘겨 비운다
+        em.flush();
+        em.clear();
+
+        Member findMember = queryFactory
+                .selectFrom(member)
+                .join(member.team, team).fetchJoin()
+                .where(member.username.eq("member1"))
+                .fetchOne();
+
+        // 초기화가 된 엔티티인지 아닌지 검증
+        boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
+        System.out.println(loaded);
+        assertThat(loaded).as("패치 조인 적용").isTrue();
+    }
+
+    // 서브 쿼리1
+    /**
+     * 나이가 가장 많은 회원 조회
+     */
+    @Test
+    public void subQuery(){
+        // alias 중복 방지
+        QMember memberSub = new QMember("memberSub");
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .where(member.age.eq(select(memberSub.age.max())
+                        .from(memberSub)
+                ))
+                .fetch();
+
+        assertThat(result).extracting("age")
+                .containsExactly(40);
+    }
+    // 서브 쿼리2
+    /**
+     * 나이가 평균 이상인 회원
+     */
+    @Test
+    public void subQueryGoe(){
+        // alias 중복 방지
+        QMember memberSub = new QMember("memberSub");
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .where(member.age.goe(select(memberSub.age.avg())
+                        .from(memberSub)
+                ))
+                .fetch();
+
+        assertThat(result).extracting("age")
+                .containsExactly(30, 40);
+    }
+    // 서브 쿼리3
+
+    /**
+     * 10살 이상인 회원
+     */
+    @Test
+    public void subQueryIn(){
+        // alias 중복 방지
+        QMember memberSub = new QMember("memberSub");
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .where(member.age.in(select(memberSub.age)
+                        .from(memberSub)
+                        .where(memberSub.age.gt(10)) // 열살 초과
+                ))
+                .fetch();
+
+        assertThat(result).extracting("age")
+                .containsExactly(20, 30, 40);
+    }
+    // 서브 쿼리4
+    @Test
+    public void selectSubQuery(){
+        // alias 중복 방지
+        QMember memberSub = new QMember("memberSub");
+        List<Tuple> result = queryFactory
+                .select(member.username,
+                        // JPAExpressions(select...) : import static(alt+enter)
+                        select((memberSub.age.avg()))
+                                .from(memberSub))
+                .from(member)
+                .fetch();
+
+        for(Tuple tuple : result){
+            System.out.println("tuple = "+tuple);
+        }
+    }
+
+    /**
+     * from 절의 서브 쿼리는 되지않음(JPA의 한계)
+     * -> 서브 쿼리를 조인으로 변경, 쿼리를 2번 분리해서 실행, nativeSQL 사용
+     */
+
 }
