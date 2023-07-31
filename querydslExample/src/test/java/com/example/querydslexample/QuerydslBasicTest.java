@@ -6,6 +6,9 @@ import com.example.querydslexample.entity.Team;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.Expression;
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.assertj.core.api.Assertions;
@@ -422,5 +425,69 @@ public class QuerydslBasicTest {
      * from 절의 서브 쿼리는 되지않음(JPA의 한계)
      * -> 서브 쿼리를 조인으로 변경, 쿼리를 2번 분리해서 실행, nativeSQL 사용
      */
+
+    // case문 : 경우에 따라 다르지만 데이터베이스에서 처리하는 것이 좋다
+    // 1. 간단한 조건
+    @Test
+    public void basicCase() {
+        List<String> result = queryFactory
+                .select(member.age
+                        .when(10).then("열살")
+                        .when(20).then("스무살")
+                        .otherwise("기타"))
+                .from(member)
+                .fetch();
+
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+    }
+        // 2. 복잡한 조건
+        @Test
+        public void complexCase(){
+            List<String> list = queryFactory
+                    .select(new CaseBuilder()
+                            .when(member.age.between(0, 20)).then("0~20살")
+                            .when(member.age.between(21, 30)).then("21~30살")
+                            .otherwise("기타"))
+                    .from(member)
+                    .fetch();
+
+            for(String s : list){
+                System.out.println("s = "+s);
+            }
+
+        }
+
+        // 상수, 문자 더하기
+        // 1. 상수 더하기
+        @Test
+        public void constant(){
+            List<Tuple> result = queryFactory
+                    .select(member.username, Expressions.constant("A"))
+                    .from(member)
+                    .fetch();
+
+            for (Tuple tuple : result){
+                System.out.println("tuple = "+tuple);
+            }
+
+        }
+        // 2. 문자 더하기
+        // stringValue() : 문자 변환(enum 처리할 때, 주로 사용)
+        @Test
+        public void concat(){
+            List<String> result = queryFactory
+                    .select(member.username.concat("_").concat(member.age.stringValue()))
+                    .from(member)
+                    .where(member.username.eq("member1"))
+                    .fetch();
+
+            for (String s : result){
+                System.out.println("s = "+s);
+            }
+
+        }
+
 
 }
