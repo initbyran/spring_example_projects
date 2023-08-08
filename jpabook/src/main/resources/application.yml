@@ -6,7 +6,7 @@ spring:
     driver-class-name: org.h2.Driver
   jpa:
     hibernate:
-     ddl-auto: create # 내가 가지고 있는 엔티티를 다 지우고 다시 생성
+     ddl-auto: create # create-drop이 기본
     properties:
       hibernate:
 #        show_sql: true -> system out으로 출력

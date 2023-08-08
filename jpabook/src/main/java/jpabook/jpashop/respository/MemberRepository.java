@@ -16,6 +16,7 @@ public class MemberRepository {
 
     public void save(Member member) {
         em.persist(member);
+        // insert문이 생성되지 않음 : commit될때 flush되면서 insert문이 나감
     }
     public Member findOne(Long id) {
         return em.find(Member.class, id);
