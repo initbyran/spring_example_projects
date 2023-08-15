@@ -1,4 +1,4 @@
-package jpabook.jpashop.respository;
+package jpabook.jpashop.repository;
 
 import jpabook.jpashop.domain.Member;
 import jpabook.jpashop.domain.Order;
@@ -94,5 +94,7 @@ public class OrderRepository {
                                 " join fetch o.delivery d", Order.class)
                 .getResultList();
     }
+
+
 
 }
