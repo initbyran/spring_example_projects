@@ -95,6 +95,27 @@ public class OrderRepository {
                 .getResultList();
     }
 
+    // fetch join + distinct
+    public List<Order> findAllWithItem() {
+        // order와 orderItems가 조인되면서 양이 배수로 확장되어버린다
+        // distinct : 중복 제거(데이터베이스는 모든 요소가 동일해야하나 JPA에서는 엔티티의 중복을 한 번 더 걸러준다)
+        return em.createQuery(
+                        "select distinct o from Order o" +
+                                " join fetch o.member m" +
+                                " join fetch o.delivery d" +
+                                " join fetch o.orderItems oi" +
+                                " join fetch oi.item i", Order.class)
+                .getResultList();
+    }
 
-
+    // fetch join + paging : toOne관계만 fetch join
+    public List<Order> findAllWithMemberDelivery(int offset, int limit) {
+        return em.createQuery(
+                        "select o from Order o" +
+                                " join fetch o.member m" +
+                                " join fetch o.delivery d", Order.class)
+                .setFirstResult(offset)
+                .setMaxResults(limit)
+                .getResultList();
+    }
 }
