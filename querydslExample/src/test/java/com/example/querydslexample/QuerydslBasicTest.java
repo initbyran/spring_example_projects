@@ -1,6 +1,7 @@
 package com.example.querydslexample;
 
 import com.example.querydslexample.dto.MemberDto;
+import com.example.querydslexample.dto.QMemberDto;
 import com.example.querydslexample.dto.UserDto;
 import com.example.querydslexample.entity.Member;
 import com.example.querydslexample.entity.QMember;
@@ -506,7 +507,8 @@ public class QuerydslBasicTest {
         }
 
         // 2. tuple : 여러가지 데이터
-        // repository에서만 사용하는 타입 -> dto로 return
+        // tuple은 com.querydslcore : reposiotry계층에서만 사용
+        // > dto로 return
         @Test
         public void tupleProjection(){
             List<Tuple> result = queryFactory
@@ -522,8 +524,9 @@ public class QuerydslBasicTest {
             }
         }
 
-        // 프로젝션 결과 봔환 - DTO 조회
-        // 1. 순수 JPA에서 DTO 조회
+        // 프로젝션 결과 봔환
+        // 3. DTO 조회
+        // 1) 순수 JPA에서 DTO 조회
         // ; 생성자 방식만 지원
         @Test
         public void findDtoByJPQL(){
@@ -536,7 +539,7 @@ public class QuerydslBasicTest {
                 System.out.println("memberDto = "+memberDto);
             }
         }
-        // 2. querydsl
+        // 2) querydsl
         // (1) 프로퍼티 접근
         @Test
         public void findDtoBySetter(){
@@ -591,6 +594,8 @@ public class QuerydslBasicTest {
             List<UserDto> result = queryFactory
                     .select(Projections.fields(UserDto.class,
                             member.username.as("name"),
+                            // ExpressionUtils.as(member.username, alias: "name")
+                            // subQeury는 expressionutils를 쓸 수 밖게 없다.
                             ExpressionUtils.as(JPAExpressions
                                     .select(memberSub.age.max())
                                     .from(memberSub), "age")
@@ -602,6 +607,21 @@ public class QuerydslBasicTest {
                 System.out.println("memberDto = "+userDto);
             }
         }
+        // (5) queryProjection - 생성자
+        // -> dto ; @QueryProjection
+        @Test
+        public void findDtoByQueryProjection(){
+            List<MemberDto> result = queryFactory
+                    .select(new QMemberDto(member.username, member.age))
+                    .from(member)
+                    .fetch();
+
+            for(MemberDto memberDto : result){
+                System.out.println("memberDto = "+memberDto);
+            }
+        }
+
+
 
 
 }
