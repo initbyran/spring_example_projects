@@ -13,6 +13,20 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ *
+ * Mysql
+ * 이미 Mysql 을 사용하고 있다면 별도의 비용없이 사용가능하다.
+ * 어느정도의 트래픽까지는 문제없이 활용이 가능하다.
+ * Redis 보다는 성능이 좋지않다.
+ *
+ * Redis
+ * 활용중인 Redis 가 없다면 별도의 구축비용과 인프라 관리비용이 발생한다.
+ * Mysql 보다 성능이 좋다.
+ *
+ */
+
 @SpringBootTest
 class StockServiceTest {
 
